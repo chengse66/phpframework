@@ -81,12 +81,11 @@ class bootstrap{
      */
     private static function __run() {
         $URL=$_SERVER["REQUEST_URI"];
-        $URL=substr($URL, 0,strpos($URL, "?"));
+        $URL='/'.ltrim(substr($URL, 0,strpos($URL, "?")),"/");
         ksort(self::$_map,SORT_STRING);
         if(!empty($URL)) {
             $patten = '/' . trim(str_replace('/', '\\/', self::path_rel()),'/') . '/';
             $url = '/'.trim(preg_replace($patten, '', $URL),'/');
-            
             foreach (self::$_map as $key => $value) {
                 if (preg_match($key, $url, $matchs) > 0) {
                     array_shift($matchs);
