@@ -165,6 +165,6 @@ app/view/helloworld.html
 	ww_dao=bootstrap::dap
 	ww_map=bootstrap::map
 
-[http://blog.csdn.net/flashdevelop/article/details/54845739](http://blog.csdn.net/flashdevelop/article/details/54845739)
+[http://blog.csdn.net/flashdevelop/article/details/54847241](http://blog.csdn.net/flashdevelop/article/details/54847241)
 
 更多功能等着你去发现.
