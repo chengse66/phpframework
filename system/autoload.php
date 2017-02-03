@@ -1,5 +1,5 @@
 <?php
-session_start();
+if(!session_id())session_start();
 if(!function_exists("ww_autoload")){
     function ww_autoload($_class_name){
         require_once __DIR__.'/core/'.$_class_name.'.php';
@@ -9,25 +9,13 @@ if(!function_exists("ww_autoload")){
 if(!function_exists("ww_error_handle")){
     function ww_error_handle($errno, $errstr, $errfile, $errline)
     {
-        var_dump(func_get_args());
-        if (!(error_reporting() & $errno)) return;
         switch ($errno) {
-            case E_USER_ERROR:
-                echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
-                echo "  Fatal error on line $errline in file $errfile";
-                echo ", PHP " . PHP_VERSION . " (" . PHP_OS . ")<br />\n";
+        	case E_USER_ERROR:
+            case E_ERROR:
+            case E_WARNING:
+                echo "<h3><font color='#ff0000'>[Error] $errstr</font></h3>\n";
+                echo "<h5>on line <font color='#ff0000'>$errline</font> in file <font color='#ff0000'>$errfile</font></h5>";
                 exit(1);
-                break;
-
-            case E_USER_WARNING:
-                echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
-                break;
-
-            case E_USER_NOTICE:
-                echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
-                break;
-            default:
-                echo "Unknown error type: [$errno] $errstr<br />\n";
                 break;
         }
         return true;
