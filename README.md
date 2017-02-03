@@ -65,18 +65,18 @@
 
 
 ----------
-**map($_name,方法或者字符串形式)**
+**bootstrap::map($_name,方法或者字符串形式)**
 
-	map('/helloworld',function(){echo "helloworld";})
-	map("/(\d+)",function($num){
+	bootstrap::map('/helloworld',function(){echo "helloworld";})
+	bootstrap::map("/(\d+)",function($num){
         echo $num;
     });
-	map("/(\w+)",function($str){
+	bootstrap::map("/(\w+)",function($str){
        echo $str;
     });
-	map("/say","Helloworld@say");
+	bootstrap::map("/say","Helloworld@say");
 
-**model($_name)** 目录映射 app/models/名称Model.php
+**bootstrap::model($_name)** 目录映射 app/models/名称Model.php
 
 app/model/SampleModel.php
 	
@@ -93,7 +93,7 @@ app/controllers/HelloworldController.php
 	class HelloworldController
 	{
 	    function say(){
-	        var_dump(model("sample")->getList());
+	        var_dump(bootstrap::model("sample")->getList());
 	    }
 	}
 
@@ -109,9 +109,9 @@ http://localhost/say
 	  string(1) "c"
 	}
 
-**view($viewname,$params=array(),$mode=0)** 视图调用
+**bootstrap::renderer($viewname,$params=array(),$mode=0)** 视图调用
 	
-	view("/helloworld",array("name"=>"小张"));
+	bootstrap::renderer("/helloworld",array("name"=>"小张"));
 
 app/view/helloworld.html
 	
@@ -121,9 +121,9 @@ app/view/helloworld.html
 	hello小张
 
 
-**route($controlname,$method)**手动路由模式,如果你有特别需要
+**bootstrap::route($controlname,$method)**手动路由模式,如果你有特别需要
 	
-	route("Helloworld","say");
+	bootstrap::route("Helloworld","say");
 
 **import($dot_name)** 导入libs下的文件
 	
@@ -133,7 +133,7 @@ app/view/helloworld.html
 
 **dao($name)**数据库连接器,单独作为类使用用的PDO驱动,目前的话基本都支持PDO驱动的.
 	
-	dao("config");
+	bootstrap::dao("config");
 对应配置文件:app/config/config.php
 	
 	<?php
@@ -145,9 +145,26 @@ app/view/helloworld.html
 
 有如下方法:
 	
-	dao()->fetch()
-	dao()->fetchAll();
-	dao()->lastInsertId();
+	bootstrap::dao()->fetch()
+	bootstrap::dao()->fetchAll();
+	bootstrap::dao()->lastInsertId();
 	...
+
+如果要使用简拼的方法名称:
+	
+	index.php
+	<?php
+    require 'system/bootstrap.php';
+    require 'system/short_func.php';
+    bootstrap::start("app");
+
+	ww_view=bootstrap::renderer
+	ww_route=bootstrap::route
+	ww_import=bootstrap::import
+	ww_config=bootstrap::config
+	ww_dao=bootstrap::dap
+	ww_map=bootstrap::map
+
+[http://blog.csdn.net/flashdevelop/article/details/54845739](http://blog.csdn.net/flashdevelop/article/details/54845739)
 
 更多功能等着你去发现.

@@ -65,7 +65,7 @@ class template{
      */
     private function parse_template(&$content)
     {
-        $content = preg_replace('/\{\@([^\}]+)\}/', '{php} include ww_view(\'$1\',null,1); {/php}', $content);
+        $content = preg_replace('/\{\@([^\}]+)\}/', '{php} include bootstrap::renderer(\'$1\',null,1); {/php}', $content);
     }
     /**
      * 处理变量

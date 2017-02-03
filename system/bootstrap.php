@@ -43,8 +43,7 @@ class bootstrap{
      * @param mixed|string $_method 方法或字符Controller@method
      */
     static function map($_name, $_method){
-    	$_name=rtrim($_name,"$");
-    	$_name="/".ltrim(ltrim($_name,"^"),"/");
+    	$_name='/'.preg_replace("/(^\\^?\\/)|(\\$$)/", "", $_name);
         $_name=preg_replace('/\\{\\w+\\}/', '(\\w+)',$_name);
         $_name=preg_replace('/\\//', '\\\/', $_name);
         $_name="/^$_name$/";
@@ -81,30 +80,28 @@ class bootstrap{
      */
     private static function __run() {
         $URL=$_SERVER["REQUEST_URI"];
-        $URL='/'.ltrim(substr($URL, 0,strpos($URL, "?")),"/");
+        $p=strpos($URL, "?");
+        if($p!=false && $p>=0) $URL=substr($URL, 0,$p);
+        $URL='/'.preg_replace("/(^\\/)|(\\/$)/", "", $URL);
         ksort(self::$_map,SORT_STRING);
-        if(!empty($URL)) {
-            $patten = '/' . trim(str_replace('/', '\\/', self::path_rel()),'/') . '/';
-            $url = '/'.trim(preg_replace($patten, '', $URL),'/');
-            foreach (self::$_map as $key => $value) {
-                if (preg_match($key, $url, $matchs) > 0) {
-                    array_shift($matchs);
-                    $t=gettype($value);
-                    switch ($t){
-                        case "string":
-                            $list = explode('@', $value);
-                            if(count($list)==2) {
-                                self::route($list[0], $list[1]);
-                                return;
-                            }
-                            break;
-                        case "object":
-                            call_user_func_array($value, $matchs);
-                            return;
-                            break;
+    	foreach (self::$_map as $key => $value) {
+        if (preg_match($key, $URL, $matchs) > 0) {
+            array_shift($matchs);
+            $t=gettype($value);
+            switch ($t){
+                case "string":
+                    $list = explode('@', $value);
+                    if(count($list)==2) {
+                          self::route($list[0], $list[1]);
+                          return;
                     }
+                    break;
+                case "object":
+                     call_user_func_array($value, $matchs);
+                     return;
+                     break;
                 }
-            }
+			}
         }
     }
 
@@ -115,7 +112,7 @@ class bootstrap{
      * @param int $mode 模式RENDERER_BODY,RENDERER_PATH
      * @return string
      */
-    static function view($_dot_path, $_param = array(), $mode = 0) {
+    static function renderer($_dot_path, $_param = array(), $mode = 0) {
         $src_file=self::path_dot($_dot_path,'views/').".html";
         $cache_file=self::path_dot($_dot_path,'cache/').'.cache.php';
         if(file_exists($src_file)){
@@ -144,24 +141,8 @@ class bootstrap{
      * @param mixed $_params 参数
      */
     static function route($_name, $_method,$_params=array()){
-        $pos=strpos("Controller",$_name);
-        if($pos===false)$_name=$_name."Controller";
-        $filename=self::path_app('/controllers/'.$_name.".php");
-
-        if(!isset(self::$_controllers[$_name])){
-            if(!class_exists($_name,false) && file_exists($filename)) {
-                require_once $filename;
-            }
-            if(class_exists($_name,false)){
-                self::$_controllers[$_name]=new $_name();
-            }
-        }
-        if(isset(self::$_controllers[$_name])){
-            $_instance=self::$_controllers[$_name];
-            if(method_exists($_instance,$_method)){
-                call_user_func_array(array($_instance,$_method),$_params);
-            }
-        }
+        $_instance=self::controller($_name,$_method);
+        if($_instance) call_user_func_array(array($_instance,$_method),$_params);
     }
 
     /**
@@ -184,6 +165,34 @@ class bootstrap{
         if(isset(self::$_models[$_name])){
             return self::$_models[$_name];
         }
+    }
+
+    /**
+     * 获取当前的控制器
+     * @param $_name    名称
+     * @param $_method  方法
+     * @return bool 当前控制器是否存在,存在则返回对象,不存在返回false
+     */
+    static function controller($_name,$_method){
+        $pos=strpos("Controller",$_name);
+        if($pos===false)$_name=$_name."Controller";
+        $filename=self::path_app('/controllers/'.$_name.".php");
+
+        if(!isset(self::$_controllers[$_name])){
+            if(!class_exists($_name,false) && file_exists($filename)) {
+                require_once $filename;
+            }
+            if(class_exists($_name,false)){
+                self::$_controllers[$_name]=new $_name();
+            }
+        }
+        if(isset(self::$_controllers[$_name])){
+            $_instance=self::$_controllers[$_name];
+            if(method_exists($_instance,$_method)){
+                return $_instance;
+            }
+        }
+        return false;
     }
 
     /**
@@ -228,47 +237,3 @@ class bootstrap{
         return self::$_dao[$_name];
     }
 }
-
-/**
- * 渲染视图
- * @param string $_name 路径
- * @param array $_param 渲染变量
- * @param int $mode 模式RENDERER_BODY,RENDERER_PATH
- * @return string
- */
-function ww_view($_name, $_param=array(), $mode=0){return bootstrap::view($_name,$_param,$mode);}
-/**
- * 总路由
- * @param string $_name 路由名称
- * @param mixed $_method    方法
- * @param mixed $_parmas 参数
- */
-function ww_route($_name, $_method,$_parmas=array()){bootstrap::route($_name,$_method,$_parmas);}
-/**
- * 模块对象
- * @param $_name 路由名
- * @return mixed
- */
-function ww_model($_name){return bootstrap::model($_name);}
-/**
- * 导入libs文件夹下的库
- * @param $_name 导入库文件
- */
-function ww_import($_name){return bootstrap::import($_name);}
-/**
- * 配置路由对象
- * @param string $_name
- * @return mixed|array 获取配置对象
- */
-function ww_config($_name="config"){return bootstrap::config($_name);}
-/**
- * 数据库操作DAO
- * @param $_name 对应数据库配置名称
- * @return database 数据库对象
- */
-function ww_dao($_name="config"){return bootstrap::dao($_name);}
-/**
- * @param $_name 映射名称
- * @param mixed|string $_method 方法或字符Controller@method
- */
-function ww_map($_map, $_method){return bootstrap::map($_map,$_method);}
