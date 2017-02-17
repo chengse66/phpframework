@@ -120,18 +120,22 @@ class database {
     /**
      * 更新数据库
      * @param string $table    数据库表名
-     * @param array $fields 列数据
-     * @param array $conditions 条件数组
+     * @param array $fileds 列数据
+     * @param array $conditions  条件数组
      * @param string $glue 与条件或条件
      * @return bool|int  是否执行成功
      */
-	function update($table, $fields = array(), $conditions = array(), $glue = 'AND') {
+	function update($table, $fields = array(), $conditions  = array(), $glue = 'AND') {
 		$fields = $this->implode ( $fields, ',' );
-		$conditions = $this->implode ( $conditions, $glue );
-		$conditions = array_merge ( $fields ['params'], $conditions ['params'] );
+		$params = $this->implode ( $conditions, $glue );
+		var_dump($fields);
+		var_dump($fields["params"]);
+		var_dump($params);
+		$p = array_merge ( $fields ['params'], $params ['params'] );
+		var_dump($params);
 		$sql = "UPDATE " . $this->tablename ( $table ) . " SET {$fields['fields']}";
-		$sql .= $conditions ['fields'] ? ' WHERE ' . $conditions ['fields'] : '';
-		return $this->query ( $sql, $conditions );
+		$sql .= $params ['fields'] ? ' WHERE ' . $params ['fields'] : '';
+		return $this->query ( $sql, $p );
 	}
 
     /**
