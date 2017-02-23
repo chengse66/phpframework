@@ -33,6 +33,7 @@ class bootstrap{
         self::$_dao=array();
         self::$_path_app= str_replace("\\",'/', dirname ( $_SERVER ["SCRIPT_FILENAME"] ));
         self::$_path_rel=trim(str_replace('\\', '/', dirname($_SERVER["SCRIPT_NAME"])),'/');
+        echo self::$_path_app;
         $router=self::path_app("/http/router.php");
         if(file_exists($router)) require_once $router;
         self::__run();
@@ -62,7 +63,13 @@ class bootstrap{
      * @return string
      */
     static function path_rel($_path=''){return self::$_path_rel.$_path;}
-
+    
+    /**
+     * 主文件所在的目录的绝对路径
+     */
+    static function webroot(){
+        return self::$_path_app;
+    }
     /**
      * 包路径转文件路径
      * @param string $_path 路径
@@ -81,8 +88,10 @@ class bootstrap{
     private static function __run() {
         $URL=$_SERVER["REQUEST_URI"];
         $p=strpos($URL, "?");
-        $rel=str_replace("/", "\\/", self::path_rel());
-        $URL=preg_replace("/^\\/$rel/", "", $URL);
+        if(self::path_rel()!=""){
+            $rel=str_replace("/", "\\/", self::path_rel());
+            $URL=preg_replace("/^\\/$rel/", "", $URL);
+        }
         if($p!=false && $p>=0) $URL=substr($URL, 0,$p);
         $URL='/'.preg_replace("/(^\\/)|(\\/$)/", "", $URL);
         ksort(self::$_map,SORT_STRING);
