@@ -33,7 +33,6 @@ class bootstrap{
         self::$_dao=array();
         self::$_path_app= str_replace("\\",'/', dirname ( $_SERVER ["SCRIPT_FILENAME"] ));
         self::$_path_rel=trim(str_replace('\\', '/', dirname($_SERVER["SCRIPT_NAME"])),'/');
-        echo self::$_path_app;
         $router=self::path_app("/http/router.php");
         if(file_exists($router)) require_once $router;
         self::__run();
