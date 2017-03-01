@@ -86,11 +86,11 @@ class bootstrap{
      */
     private static function __run() {
         $URL=$_SERVER["REQUEST_URI"];
-        $p=strpos($URL, "?");
         if(self::path_rel()!=""){
             $rel=str_replace("/", "\\/", self::path_rel());
             $URL=preg_replace("/^\\/$rel/", "", $URL);
         }
+        $p=strpos($URL, "?");
         if($p!=false && $p>=0) $URL=substr($URL, 0,$p);
         $URL='/'.preg_replace("/(^\\/)|(\\/$)/", "", $URL);
         ksort(self::$_map,SORT_STRING);
