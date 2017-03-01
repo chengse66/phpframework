@@ -10,7 +10,7 @@ class database {
 	public function __construct($dsn,$username,$passwd,$option=null){
 	    if($option) $option=array(PDO::ATTR_PERSISTENT=>true);
 	    $this->pdo = new PDO($dsn, $username, $passwd, $option);
-        $this->pdo->exec("SET NAMES \'utf8\';");
+        $this->pdo->exec("SET NAMES UTF8;");
 	}
 
     /**
