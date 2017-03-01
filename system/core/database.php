@@ -128,11 +128,7 @@ class database {
 	function update($table, $fields = array(), $conditions  = array(), $glue = 'AND') {
 		$fields = $this->implode ( $fields, ',' );
 		$params = $this->implode ( $conditions, $glue );
-		var_dump($fields);
-		var_dump($fields["params"]);
-		var_dump($params);
 		$p = array_merge ( $fields ['params'], $params ['params'] );
-		var_dump($params);
 		$sql = "UPDATE " . $this->tablename ( $table ) . " SET {$fields['fields']}";
 		$sql .= $params ['fields'] ? ' WHERE ' . $params ['fields'] : '';
 		return $this->query ( $sql, $p );
