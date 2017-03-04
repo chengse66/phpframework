@@ -10,7 +10,7 @@ class database {
 	public function __construct($dsn,$username,$passwd,$option=null){
 	    if($option) $option=array(PDO::ATTR_PERSISTENT=>true);
 	    $this->pdo = new PDO($dsn, $username, $passwd, $option);
-        $this->pdo->exec("SET NAMES UTF8;");
+        $this->pdo->exec("SET NAMES \'utf8\';");
 	}
 
     /**
@@ -128,7 +128,11 @@ class database {
 	function update($table, $fields = array(), $conditions  = array(), $glue = 'AND') {
 		$fields = $this->implode ( $fields, ',' );
 		$params = $this->implode ( $conditions, $glue );
+		var_dump($fields);
+		var_dump($fields["params"]);
+		var_dump($params);
 		$p = array_merge ( $fields ['params'], $params ['params'] );
+		var_dump($params);
 		$sql = "UPDATE " . $this->tablename ( $table ) . " SET {$fields['fields']}";
 		$sql .= $params ['fields'] ? ' WHERE ' . $params ['fields'] : '';
 		return $this->query ( $sql, $p );
