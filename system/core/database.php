@@ -10,7 +10,8 @@ class database {
 	public function __construct($dsn,$username,$passwd,$option=null){
 	    if($option) $option=array(PDO::ATTR_PERSISTENT=>true);
 	    $this->pdo = new PDO($dsn, $username, $passwd, $option);
-        $this->pdo->exec("SET NAMES \'utf8\';");
+	    //$this->pdo->setAttribute(PDO::ATTR_CASE,PDO::CASE_NATURAL);
+        $this->query("SET NAMES UTF8;");
 	}
 
     /**
@@ -25,6 +26,7 @@ class database {
 		}else {
             $statement = $this->pdo->prepare($sql);
             $result = $statement->execute($params);
+            unset($statement);
         }
         return $result;
 	}
@@ -78,9 +80,12 @@ class database {
      */
 	function column($sql, $params = array(), $column = 0) {
 		$statement = $this->pdo->prepare ( $sql );
-		$result = $statement->execute ( $params );
-		if ($result)return $statement->fetchColumn ($column);
-		return false;
+		$result=false;
+		if($statement->execute ( $params )){
+		    $result=$statement->fetchColumn ($column);
+		}
+		unset($statement);
+		return $result;
 	}
 
     /**
@@ -98,10 +103,13 @@ class database {
      * @return bool|mixed   获取的单个对象
      */
 	function fetch($sql, $params = array()) {
+	    $result=false;
 		$statement = $this->pdo->prepare ( $sql );
-		$result = $statement->execute ( $params );
-		if ($result) return $statement->fetch ( PDO::FETCH_ASSOC );
-		return false;
+		if($statement->execute ( $params )){
+		  $result= $statement->fetch ( PDO::FETCH_ASSOC );
+		}
+		unset($statement);
+		return $result;
 	}
 
     /**
@@ -111,10 +119,13 @@ class database {
      * @return array|bool   数据列表
      */
 	function fetchAll($sql, $params = array()) {
+	    $result=false;
 		$statement = $this->pdo->prepare($sql );
-		$result = $statement->execute ( $params );
-		if ($result) return $statement->fetchAll ( PDO::FETCH_ASSOC );
-		return false;
+		if($statement->execute ( $params )){
+            $result= $statement->fetchAll ( PDO::FETCH_ASSOC );
+		}
+		unset($statement);
+		return $result;
 	}
 
     /**
@@ -128,11 +139,7 @@ class database {
 	function update($table, $fields = array(), $conditions  = array(), $glue = 'AND') {
 		$fields = $this->implode ( $fields, ',' );
 		$params = $this->implode ( $conditions, $glue );
-		var_dump($fields);
-		var_dump($fields["params"]);
-		var_dump($params);
 		$p = array_merge ( $fields ['params'], $params ['params'] );
-		var_dump($params);
 		$sql = "UPDATE " . $this->tablename ( $table ) . " SET {$fields['fields']}";
 		$sql .= $params ['fields'] ? ' WHERE ' . $params ['fields'] : '';
 		return $this->query ( $sql, $p );
@@ -205,8 +212,12 @@ class database {
 		return "`$table`";
 	}
 
+	/**
+	 * 销毁当前连接对象
+	 */
 	function __destruct(){
-		$this->pdo=null;
+		unset($this->pdo);
+	    $this->pdo=null;
 	}
 
     /**
