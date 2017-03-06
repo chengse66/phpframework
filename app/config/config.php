@@ -1,6 +1,6 @@
 <?php
 return array(
-    "dsn"=>"mysql:host=localhost;dbname=test",
-    "user"=>"test",
-    "passwd"=>"test"
+    "dsn"=>"mysql:host=127.0.0.1;dbname=midea",
+    "user"=>"root",
+    "passwd"=>"root"
 );
