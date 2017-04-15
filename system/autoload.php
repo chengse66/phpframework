@@ -2,7 +2,10 @@
 if(!session_id())session_start();
 if(!function_exists("ww_autoload")){
     function ww_autoload($_class_name){
-        require_once __DIR__.'/core/'.$_class_name.'.php';
+        $filename= __DIR__.'/core/'.$_class_name.'.php';
+        if(file_exists($filename)){
+            require_once __DIR__.'/core/'.$_class_name.'.php';
+        }
     }
     spl_autoload_register("ww_autoload");
 }
