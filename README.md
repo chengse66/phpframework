@@ -47,6 +47,7 @@
 
 **app/http/router.php**
 
+## ****友情提醒目前只支持到文件,不支持通配符为?id=xx的形式,请在文件内用request获取**
 	<?php
     map("/helloworld",function(){
        echo "helloworld";
@@ -67,7 +68,8 @@
 ----------
 **bootstrap::map($_name,方法或者字符串形式)**
 
-**友情提醒目前只支持到文件,不支持通配符为?id=xx的形式,请在文件内用request获取
+## ****友情提醒目前只支持到文件,不支持通配符为?id=xx的形式,请在文件内用request获取**
+
 	bootstrap::map('/helloworld',function(){echo "helloworld";})
 	bootstrap::map("/(\d+)",function($num){
         echo $num;
@@ -166,6 +168,5 @@ app/view/helloworld.html
 	ww_dao=bootstrap::dap
 	ww_map=bootstrap::map
 
-[http://blog.csdn.net/flashdevelop/article/details/54847241](http://blog.csdn.net/flashdevelop/article/details/54847241)
 
-更多功能等着你去发现.
+更多功能等着你去发现.QQ:1491247
