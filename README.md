@@ -66,6 +66,7 @@
 
 ----------
 **bootstrap::map($_name,方法或者字符串形式)**
+
 **友情提醒目前只支持到文件,不支持通配符为?id=xx的形式,请在文件内用request获取
 	bootstrap::map('/helloworld',function(){echo "helloworld";})
 	bootstrap::map("/(\d+)",function($num){
