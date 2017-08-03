@@ -17,13 +17,13 @@
 	- **cache**->这个默认是没有的由views模版进行编译
 
 以上的结构和第一代框架几乎差不多,做项目足够了.
-**index.php**:
+**index.php**: 
 	
 	<?php
     require 'system/bootstrap.php';
     bootstrap::start();
+    ww_route("Hello","say",array("lili"));
 
-在浏览器中输入http://localhost/helloworld 就会出现helloworld了,是不是很神奇.
 整个框架分为6个函数:
 	model 模块
 	view  视图
