@@ -35,21 +35,8 @@ class bootstrap{
         self::$_path_rel=trim(str_replace('\\', '/', dirname($_SERVER["SCRIPT_NAME"])),'/');
         $router=self::path_app("/http/router.php");
         if(file_exists($router)) require_once $router;
-        self::__run();
     }
-
-    /**
-     * @param $_name 映射名称
-     * @param mixed|string $_method 方法或字符Controller@method
-     */
-    static function map($_name, $_method){
-    	$_name='/'.preg_replace("/(^\\^?\\/)|(\\$$)/", "", $_name);
-        $_name=preg_replace('/\\{\\w+\\}/', '(\\w+)',$_name);
-        $_name=preg_replace('/\\//', '\\\/', $_name);
-        $_name="/^$_name$/";
-        self::$_map[$_name]=$_method;
-    }
-
+    
     /**
      * @param string $_path APP下的路径
      * @return string
@@ -79,40 +66,6 @@ class bootstrap{
         $_path=$_prefix.trim(str_replace('.','/',$_path),'/');
         $_path=self::path_app('/'.$_path);
         return $_path;
-    }
-
-    /**
-     * 内容启动路由
-     */
-    private static function __run() {
-        $URL=$_SERVER["REQUEST_URI"];
-        if(self::path_rel()!=""){
-            $rel=str_replace("/", "\\/", self::path_rel());
-            $URL=preg_replace("/^\\/$rel/", "", $URL);
-        }
-        $p=strpos($URL, "?");
-        if($p!=false && $p>=0) $URL=substr($URL, 0,$p);
-        $URL='/'.preg_replace("/(^\\/)|(\\/$)/", "", $URL);
-        ksort(self::$_map,SORT_STRING);
-    	foreach (self::$_map as $key => $value) {
-        if (preg_match($key, $URL, $matchs) > 0) {
-            array_shift($matchs);
-            $t=gettype($value);
-            switch ($t){
-                case "string":
-                    $list = explode('@', $value);
-                    if(count($list)==2) {
-                          self::route($list[0], $list[1]);
-                          return;
-                    }
-                    break;
-                case "object":
-                     call_user_func_array($value, $matchs);
-                     return;
-                     break;
-                }
-			}
-        }
     }
 
     /**

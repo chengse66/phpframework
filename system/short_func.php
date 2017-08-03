@@ -37,8 +37,3 @@ function ww_config($_name="config"){return bootstrap::config($_name);}
  * @return database 数据库对象
  */
 function ww_dao($_name="config"){return bootstrap::dao($_name);}
-/**
- * @param $_name 映射名称
- * @param mixed|string $_method 方法或字符Controller@method
- */
-function ww_map($_map, $_method){return bootstrap::map($_map,$_method);}

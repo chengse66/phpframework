@@ -1,6 +1,6 @@
 <?php
 class HelloController{
-	function say(){
-		echo "Helloworld";
+	function say($name){
+		echo "Helloworld $name";
 	}
 }
