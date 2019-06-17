@@ -3,7 +3,7 @@ ini_set("display_errors","On");
 error_reporting (E_ALL);
 date_default_timezone_set ( 'PRC' );
 define ( "ALLOW_ACCESS", true );
-define ("DEVELOPMENT",false);
+if(!defined("DEBUG")) define ("DEBUG",false);
 define ( "RENDERER_BODY", 0 );
 define ( "RENDERER_PATH", 1 );
 define ( "RENDERER_HEAD", '<?php if(!defined("ALLOW_ACCESS")) exit("not access");?>' );

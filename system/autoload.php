@@ -12,7 +12,7 @@ if(!function_exists("ww_autoload")){
 if(!function_exists("ww_error_handle")){
     function ww_error_handle($errno, $errstr, $errfile, $errline)
     {
-    	if(DEVELOPMENT){
+    	if(DEBUG){
 	        switch ($errno) {
 	        	case E_USER_ERROR:
 	            case E_ERROR:
