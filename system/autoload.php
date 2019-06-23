@@ -10,20 +10,8 @@ if(!function_exists("ww_autoload")){
     spl_autoload_register("ww_autoload");
 }
 if(!function_exists("ww_error_handle")){
-    function ww_error_handle($errno, $errstr, $errfile, $errline)
-    {
-    	if(DEBUG){
-	        switch ($errno) {
-	        	case E_USER_ERROR:
-	            case E_ERROR:
-	            case E_WARNING:
-	                echo "<h3><font color='#ff0000'>[Error] $errstr</font></h3>\n";
-	                echo "<h5>on line <font color='#ff0000'>$errline</font> in file <font color='#ff0000'>$errfile</font></h5>";
-	                exit(1);
-	                break;
-	        }
-    	}
-        return true;
+    function ww_error_handle($errno, $errstr, $errfile, $errline){
+    	bootstrap::error_handle($errno, $errstr, $errfile, $errline);
     }
     set_error_handler("ww_error_handle");
 }

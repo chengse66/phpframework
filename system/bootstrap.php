@@ -105,7 +105,11 @@ class bootstrap{
      */
     static function route($_name, $_method,$_params=array()){
         $_instance=self::controller($_name,$_method);
-        if($_instance) call_user_func_array(array($_instance,$_method),$_params);
+        if($_instance) {
+        	call_user_func_array(array($_instance,$_method),$_params);
+        }else{
+        	self::error_handle(E_NOTICE, "method $_method not exists in ".$_name."Controller", "", -1);
+        }
     }
 
     /**
@@ -114,8 +118,7 @@ class bootstrap{
      * @return mixed
      */
     static function model($_name){
-        $pos=strpos("Model",$_name);
-        if($pos===false)$_name=$_name."Model";
+        if(strpos("Model",$_name)===false)$_name=$_name."Model";
         $filename=self::path_app('/models/'.$_name.".php");
         if(!isset(self::$_models[$_name])){
             if(!class_exists($_name,false) && file_exists($filename)) {
@@ -127,6 +130,9 @@ class bootstrap{
         }
         if(isset(self::$_models[$_name])){
             return self::$_models[$_name];
+        }else{
+        	throw new Exception("model $_name is not exists");
+        	self::error_handle(E_NOTICE, "model $_name is not exists", "", -1);
         }
     }
 
@@ -228,5 +234,30 @@ class bootstrap{
     	$result = curl_exec($ch);
     	curl_close($ch);
     	return $result;
+    }
+    
+    /**
+     * 处理错误指令
+     * @param number $errno
+     * @param string $errstr
+     * @param string $errfile
+     * @param number $errline
+     * @return boolean
+     */
+    static function error_handle($errno, $errstr, $errfile, $errline)
+    {
+    	if(DEBUG){
+    		switch ($errno) {
+    			case E_USER_ERROR:
+    			case E_ERROR:
+    			case E_WARNING:
+    			case E_NOTICE:
+    				echo "<h3><font color='#ff0000'>[Error] $errstr</font></h3>\n";
+    				if($errline>=0) echo "<h5>on line <font color='#ff0000'>$errline</font> in file <font color='#ff0000'>$errfile</font></h5>";
+    				exit(1);
+    				break;
+    		}
+    	}
+    	return true;
     }
 }
