@@ -199,4 +199,34 @@ class bootstrap{
         }
         return self::$_dao[$_name];
     }
+    
+    /**
+     * Http函数
+     * @param string $url
+     * @param string $method
+     * @param mixed $data
+     * @param mixed $header
+     * @param number $timeout
+     * @return mixed
+     */
+    static function curl($url,$method="get", $data = array(),$header = array(), $timeout = 5) {
+    	if(empty($header) || count($header)==0) $header=array("");
+    	$query = http_build_query($data);
+    	if($timeout<=0) $timeout=5;
+    	$ch = curl_init();
+    	if($method=="post"){
+    		curl_setopt($ch, CURLOPT_POST, true);
+    		curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
+    	}else if(!empty($query)){
+    		$url.=(strpos($url, "?")?"&":"?").$query;
+    	}
+    	curl_setopt($ch, CURLOPT_URL, $url);
+    	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+    	curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+    	curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+    	$result = curl_exec($ch);
+    	curl_close($ch);
+    	return $result;
+    }
 }

@@ -37,3 +37,21 @@ function ww_config($_name="config"){return bootstrap::config($_name);}
  * @return database 数据库对象
  */
 function ww_dao($_name="config"){return bootstrap::dao($_name);}
+
+/**
+ * get url
+ * @param string $url 路径
+ * @param mixed $array 提交的数据
+ */
+function ww_get($url,$array=array()){
+	bootstrap::curl($url,"get",$array);
+}
+
+/**
+ * post url
+ * @param string $url	路径
+ * @param mixed $array  提交的数据
+ */
+function ww_post($url,$array=array()){
+	bootstrap::curl($url,"post",$array);
+}
