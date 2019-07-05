@@ -260,4 +260,18 @@ class bootstrap{
     	}
     	return true;
     }
+    
+    /**
+     * 获取不重复的唯一标识ID
+     * @return string
+     */
+    static function guid(){
+    	return sprintf('%s%s%s%s%s%s',
+    			dechex(intval(date('Y')) - 2010),
+    			dechex(date('m')),
+    			date('d'),
+    			substr(time(), -5),
+    			substr(microtime(), 2, 5),
+    			rand(0, 99));
+    }
 }
