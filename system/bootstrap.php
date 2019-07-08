@@ -266,12 +266,12 @@ class bootstrap{
      * @return string
      */
     static function guid(){
-    	return sprintf('%s%s%s%s%s%s',
-    			dechex(intval(date('Y')) - 2010),
-    			dechex(date('m')),
-    			date('d'),
-    			substr(time(), -5),
-    			substr(microtime(), 2, 5),
-    			rand(0, 99));
+        return sprintf('%s%s%s%s%s%s',
+            dechex(intval(date('Y')) - 2010),
+            dechex(date('m')),
+            date('d'),
+            substr(time(), -5),
+            substr(microtime(), 2, 5),
+            rand(0, 99));
     }
 }
