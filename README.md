@@ -120,5 +120,14 @@ app/view/helloworld.html
 	ww_dao=bootstrap::dap
 	ww_map=bootstrap::map
 
+简单的模板语法：
+
+	{@/header}
+	外部文件引用
+	{$item['name']}
+	显示数组的名称
+	{foreach $a as $k} 循环处理 {/foreach}
+	{if $a==1}{else}{/if} 判断处理
+	具体可以参考ZBLOG的模板库，这个模板处理库修改自ZBLOG，如果有侵权请联系我。
 
 更多功能等着你去发现.QQ:1491247

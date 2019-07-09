@@ -79,7 +79,7 @@ class bootstrap{
         $src_file=self::path_dot($_dot_path,'views/').".html";
         $cache_file=self::path_dot($_dot_path,'cache/').'.cache.php';
         if(file_exists($src_file)){
-            if(DEVELOPMENT || !file_exists($cache_file) || filemtime($cache_file)<filemtime($src_file)){
+            if(DEBUG || !file_exists($cache_file) || filemtime($cache_file)<filemtime($src_file)){
                 if(!file_exists(dirname($cache_file))) mkdir(dirname($cache_file),0777,true);
                 $tpl=new template();
                 file_put_contents($cache_file, RENDERER_HEAD.$tpl->Compiling(file_get_contents($src_file)));
@@ -251,7 +251,7 @@ class bootstrap{
     			case E_USER_ERROR:
     			case E_ERROR:
     			case E_WARNING:
-    			case E_NOTICE:
+    			//case E_NOTICE:
     				echo "<h3><font color='#ff0000'>[Error] $errstr</font></h3>\n";
     				if($errline>=0) echo "<h5>on line <font color='#ff0000'>$errline</font> in file <font color='#ff0000'>$errfile</font></h5>";
     				exit(1);
