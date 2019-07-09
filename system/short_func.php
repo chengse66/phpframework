@@ -44,7 +44,7 @@ function ww_dao($_name="config"){return bootstrap::dao($_name);}
  * @param mixed $array 提交的数据
  */
 function ww_get($url,$array=array()){
-	bootstrap::curl($url,"get",$array);
+	return bootstrap::curl($url,"get",$array);
 }
 
 /**
@@ -53,5 +53,5 @@ function ww_get($url,$array=array()){
  * @param mixed $array  提交的数据
  */
 function ww_post($url,$array=array()){
-	bootstrap::curl($url,"post",$array);
+	return bootstrap::curl($url,"post",$array);
 }
