@@ -143,6 +143,7 @@ class bootstrap{
      */
     static function import($path){
     	$path=self::cleanPath($path);
+    	$path=preg_replace("/.php$/i", "", $path).".php";
         $path=self::app_path("/libs$path");
         if(file_exists($path)){
             require_once $path;

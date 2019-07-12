@@ -4,5 +4,6 @@ class HelloController{
 		echo "this is a test";
 		
 		ww_view("/welcome");
+		ww_import("/aa/bb");
 	}
 }
