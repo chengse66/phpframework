@@ -12,7 +12,6 @@
 	- **config**->配置文件夹,包括数据库配置和其他配置选项
 	- **controllers**->由Controller结尾的控制器类(逻辑视图调用)
 	- **libs**->库文件目录
-	- **models**->由Model结尾的模块类(数据调用)
 	- **views**->一大堆HTML模版文件
 	- **cache**->这个默认是没有的由views模版进行编译
 
@@ -32,24 +31,13 @@
 	dao	   数据库控制函数
 	config 配置文件读取函数
 
-**bootstrap::model($_name)** 目录映射 app/models/名称Model.php
-
-app/model/SampleModel.php
-	
-	<?php
-	class SampleModel
-	{
-	    function getList(){
-	        return array("a","b","c");
-	    }
-	}
 app/controllers/HelloworldController.php
 
 	<?php
 	class HelloworldController
 	{
 	    function say(){
-	        var_dump(bootstrap::model("sample")->getList());
+	        //var_dump(bootstrap::model("sample")->getList());
 	    }
 	}
 
@@ -80,10 +68,9 @@ app/view/helloworld.html
 	
 	bootstrap::route("Helloworld","say");
 
-**import($dot_name)** 导入libs下的文件
+**import($path)** 导入libs下的文件
 	
-	import excel.PHPExcel
-	import microMsg.MicroMsgProxy
+	ww_import('/excel/PHPExcel.php')
 
 
 **dao($name)**数据库连接器,单独作为类使用用的PDO驱动,目前的话基本都支持PDO驱动的.
@@ -117,8 +104,9 @@ app/view/helloworld.html
 	ww_route=bootstrap::route
 	ww_import=bootstrap::import
 	ww_config=bootstrap::config
-	ww_dao=bootstrap::dap
-	ww_map=bootstrap::map
+	ww_dao=bootstrap::dao
+	ww_post POST方法用来读取HTTP
+	ww_get GET方法用来读取HTTP
 
 简单的模板语法：
 

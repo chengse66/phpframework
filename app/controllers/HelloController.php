@@ -1,6 +1,8 @@
 <?php
 class HelloController{
-	function say($name){
-		echo "Helloworld $name";
+	function test(){
+		echo "this is a test";
+		
+		ww_view("/welcome");
 	}
 }

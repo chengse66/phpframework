@@ -8,15 +8,28 @@ define ( "RENDERER_BODY", 0 );
 define ( "RENDERER_PATH", 1 );
 define ( "RENDERER_HEAD", '<?php if(!defined("ALLOW_ACCESS")) exit("not access");?>' );
 define ( "RENDERER_PREFIX","m5e7a7l1u9k1r6y1e5s8c9g5e0p1p2n1");
-require "autoload.php";
+
+if(!session_id())session_start();
+if(!function_exists("ww_autoload")){
+    function ww_autoload($_class_name){
+        $filename= __DIR__.'/core/'.$_class_name.'.php';
+        if(file_exists($filename)){
+            require_once __DIR__.'/core/'.$_class_name.'.php';
+        }
+    }
+    spl_autoload_register("ww_autoload");
+}
+if(!function_exists("ww_error_handle")){
+    function ww_error_handle($errno, $errstr, $errfile, $errline){
+    	bootstrap::error_handle($errno, $errstr, $errfile, $errline);
+    }
+    set_error_handler("ww_error_handle");
+}
 
 class bootstrap{
-    private static $_map;
     private static $_app_name;
-    private static $_path_app;
-    private static $_path_rel;
+    private static $_app_path;
     private static $_controllers;
-    private static $_models;
     private static $_config;
     private static $_dao;
 
@@ -25,47 +38,35 @@ class bootstrap{
      * @param string $_appname 应用目录
      */
     static function start($_appname="app"){
-        self::$_map=array();
-        self::$_models=array();
         self::$_controllers=array();
         self::$_app_name=$_appname;
         self::$_config=array();
         self::$_dao=array();
-        self::$_path_app= str_replace("\\",'/', dirname ( $_SERVER ["SCRIPT_FILENAME"] ));
-        self::$_path_rel=trim(str_replace('\\', '/', dirname($_SERVER["SCRIPT_NAME"])),'/');
-        $router=self::path_app("/http/router.php");
-        if(file_exists($router)) require_once $router;
+        self::$_app_path= str_replace("\\",'/', dirname ( $_SERVER ["SCRIPT_FILENAME"] ));
     }
     
     /**
      * @param string $_path APP下的路径
      * @return string
      */
-    private static function path_app($_path=''){return self::$_path_app.'/'.self::$_app_name.$_path;}
-
+    static function app_path($_path=''){
+    	return self::$_app_path.'/'.self::$_app_name.self::cleanPath($_path);
+    }
+    
     /**
-     * 相对路径
-     * @param string $_path 相对路径
+     * 清空URL
+     * @param unknown $path
      * @return string
      */
-    static function path_rel($_path=''){return self::$_path_rel.$_path;}
+    private static function cleanPath($path){
+    	return '/'.preg_replace("/^(\\\|\\/)+/i", "", $path);
+    }
     
     /**
      * 主文件所在的目录的绝对路径
      */
     static function webroot(){
-        return self::$_path_app;
-    }
-    /**
-     * 包路径转文件路径
-     * @param string $_path 路径
-     * @param string $_prefix
-     * @return string
-     */
-    private static function path_dot($_path,$_prefix=''){
-        $_path=$_prefix.trim(str_replace('.','/',$_path),'/');
-        $_path=self::path_app('/'.$_path);
-        return $_path;
+        return self::$_app_path;
     }
 
     /**
@@ -75,9 +76,10 @@ class bootstrap{
      * @param int $mode 模式RENDERER_BODY,RENDERER_PATH
      * @return string
      */
-    static function renderer($_dot_path, $_param = array(), $mode = 0) {
-        $src_file=self::path_dot($_dot_path,'views/').".html";
-        $cache_file=self::path_dot($_dot_path,'cache/').'.cache.php';
+    static function renderer($path, $_param = array(), $mode = 0) {
+    	$path=self::cleanPath($path);
+        $src_file=self::app_path("/views$path").".html";
+        $cache_file=self::app_path("/cache$path.cache.php");
         if(file_exists($src_file)){
             if(DEBUG || !file_exists($cache_file) || filemtime($cache_file)<filemtime($src_file)){
                 if(!file_exists(dirname($cache_file))) mkdir(dirname($cache_file),0777,true);
@@ -105,39 +107,10 @@ class bootstrap{
      */
     static function route($_name, $_method,$_params=array()){
         $_instance=self::controller($_name,$_method);
-        if($_instance) {
-        	call_user_func_array(array($_instance,$_method),$_params);
-        }else{
-        	self::error_handle(E_NOTICE, "method $_method not exists in ".$_name."Controller", "", -1);
-        }
+        if($_instance) call_user_func_array(array($_instance,$_method),$_params);
     }
 
-    /**
-     * 模块对象
-     * @param $_name 路由名
-     * @return mixed
-     */
-    static function model($_name){
-        if(strpos("Model",$_name)===false)$_name=$_name."Model";
-        $filename=self::path_app('/models/'.$_name.".php");
-        if(!isset(self::$_models[$_name])){
-            if(!class_exists($_name,false) && file_exists($filename)) {
-                require_once $filename;
-            }
-            if(class_exists($_name,false)){
-                self::$_models[$_name]=new $_name();
-            }
-        }
-        if(isset(self::$_models[$_name])){
-            return self::$_models[$_name];
-        }else{
-        	throw new Exception("model $_name is not exists");
-        	self::error_handle(E_NOTICE, "model $_name is not exists", "", -1);
-        }
-    }
-
-    /**
-     * 获取当前的控制器
+     /* 获取当前的控制器
      * @param $_name    名称
      * @param $_method  方法
      * @return bool 当前控制器是否存在,存在则返回对象,不存在返回false
@@ -145,8 +118,7 @@ class bootstrap{
     static function controller($_name,$_method){
         $pos=strpos("Controller",$_name);
         if($pos===false)$_name=$_name."Controller";
-        $filename=self::path_app('/controllers/'.$_name.".php");
-
+        $filename=self::app_path("/controllers/$_name.php");
         if(!isset(self::$_controllers[$_name])){
             if(!class_exists($_name,false) && file_exists($filename)) {
                 require_once $filename;
@@ -161,6 +133,7 @@ class bootstrap{
                 return $_instance;
             }
         }
+        self::error_handle(E_USER_ERROR, $filename ." or class is not exists!", "", -1);
         return false;
     }
 
@@ -168,10 +141,13 @@ class bootstrap{
      * 导入libs文件夹下的库
      * @param $_dot_path 导入库文件
      */
-    static function import($_dot_path){
-        $_dot_path=self::path_dot($_dot_path,'libs/').'.php';
-        if(file_exists($_dot_path)){
-            require_once $_dot_path;
+    static function import($path){
+    	$path=self::cleanPath($path);
+        $path=self::app_path("/libs$path");
+        if(file_exists($path)){
+            require_once $path;
+        }else{
+        	self::error_handle(E_USER_ERROR, $path ." is not exists!", "", -1);
         }
     }
 
@@ -181,7 +157,8 @@ class bootstrap{
      * @return mixed|array 获取配置对象
      */
     static function config($_name){
-        $_name=self::path_dot($_name,'config/').'.php';
+    	$name=self::cleanPath($_name);
+        $_name=self::app_path("/config$name").'.php';
         if(!isset(self::$_config[$_name])){
             if(file_exists($_name)){
                 self::$_config[$_name]=require_once $_name;
@@ -275,4 +252,55 @@ class bootstrap{
             substr(microtime(), 2, 5),
             rand(0, 99));
     }
+}
+
+/**
+ * 渲染视图
+ * @param string $_name 路径
+ * @param array $_param 渲染变量
+ * @param int $mode 模式RENDERER_BODY,RENDERER_PATH
+ * @return string
+ */
+function ww_view($_name, $_param=array(), $mode=0){return bootstrap::renderer($_name,$_param,$mode);}
+/**
+ * 总路由
+ * @param string $_name 路由名称
+ * @param mixed $_method    方法
+ * @param mixed $_parmas 参数
+ */
+function ww_route($_name, $_method,$_parmas=array()){bootstrap::route($_name,$_method,$_parmas);}
+/**
+ * 导入libs文件夹下的库
+ * @param $_name 导入库文件
+ */
+function ww_import($_name){return bootstrap::import($_name);}
+/**
+ * 配置路由对象
+ * @param string $_name
+ * @return mixed|array 获取配置对象
+ */
+function ww_config($_name="config"){return bootstrap::config($_name);}
+/**
+ * 数据库操作DAO
+ * @param $_name 对应数据库配置名称
+ * @return database 数据库对象
+ */
+function ww_dao($_name="config"){return bootstrap::dao($_name);}
+
+/**
+ * get url
+ * @param string $url 路径
+ * @param mixed $array 提交的数据
+ */
+function ww_get($url,$array=array()){
+	return bootstrap::curl($url,"get",$array);
+}
+
+/**
+ * post url
+ * @param string $url	路径
+ * @param mixed $array  提交的数据
+ */
+function ww_post($url,$array=array()){
+	return bootstrap::curl($url,"post",$array);
 }

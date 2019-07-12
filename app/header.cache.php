@@ -1,0 +1,1 @@
+<?php if(!defined("ALLOW_ACCESS")) exit("not access");?>this is a fuck
