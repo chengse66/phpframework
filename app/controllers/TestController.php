@@ -1,5 +1,8 @@
 <?php
-class HelloController{
+class TestController{
+	function home(){
+		echo "test home";
+	}
 	function test(){
 		echo "this is a test";
 		
