@@ -107,6 +107,9 @@ app/view/helloworld.html
 	ww_dao=bootstrap::dao
 	ww_post POST方法用来读取HTTP
 	ww_get GET方法用来读取HTTP
+	ww_create 创建初始目录
+	
+	bootstrap::controller($classname,$method); 检测方法是否存在
 
 简单的模板语法：
 
