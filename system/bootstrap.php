@@ -55,7 +55,7 @@ class bootstrap{
     
     /**
      * 清空URL
-     * @param unknown $path
+     * @param string $path
      * @return string
      */
     private static function cleanPath($path){
@@ -133,7 +133,7 @@ class bootstrap{
                 return $_instance;
             }
         }
-        self::error_handle(E_USER_ERROR, $filename ." or class is not exists!", "", -1);
+        //self::error_handle(E_USER_ERROR, $filename ." or class is not exists!", "", -1);
         return false;
     }
 
@@ -143,8 +143,8 @@ class bootstrap{
      */
     static function import($path){
     	$path=self::cleanPath($path);
-    	$path=preg_replace("/.php$/i", "", $path).".php";
         $path=self::app_path("/libs$path");
+        $path=preg_replace("/.php$/i", "", $path).".php";
         if(file_exists($path)){
             require_once $path;
         }else{
@@ -251,7 +251,7 @@ class bootstrap{
             date('d'),
             substr(time(), -5),
             substr(microtime(), 2, 5),
-            rand(0, 99));
+            rand(10, 99));
     }
 }
 
@@ -304,4 +304,33 @@ function ww_get($url,$array=array()){
  */
 function ww_post($url,$array=array()){
 	return bootstrap::curl($url,"post",$array);
+}
+
+/**
+ * @param string $app 项目
+ */
+function ww_create($app="app"){
+    global $folder;
+    global $_app;
+
+    $_app=$app;
+    $folder=str_replace("\\","/",getcwd());
+
+    function mk_dir($names=array()){
+        global $folder,$_app;
+        foreach($names as $name){
+            $fullpath=$folder."/".$_app."/".$name;
+            echo $fullpath;
+            if(!file_exists($fullpath)){
+                mkdir($fullpath,0777,true);
+            }
+        }
+    }
+    mk_dir(array("config","controllers","libs","views"));
+    file_put_contents($folder."/config/config.php",'<?php
+    return array(
+        "dsn"=>"mysql:host=127.0.0.1;port=3306;dbname=数据库名称",
+        "user"=>"账号",
+        "passwd"=>"密码",
+    );');
 }
