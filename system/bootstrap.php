@@ -320,7 +320,6 @@ function ww_create($app="app"){
         global $folder,$_app;
         foreach($names as $name){
             $fullpath=$folder."/".$_app."/".$name;
-            echo $fullpath;
             if(!file_exists($fullpath)){
                 mkdir($fullpath,0777,true);
             }
