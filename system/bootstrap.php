@@ -326,7 +326,7 @@ function ww_create($app="app"){
         }
     }
     mk_dir(array("config","controllers","libs","views"));
-    file_put_contents($folder."/config/config.php",'<?php
+    file_put_contents($folder."/".$_app."/config/config.php",'<?php
     return array(
         "dsn"=>"mysql:host=127.0.0.1;port=3306;dbname=数据库名称",
         "user"=>"账号",
