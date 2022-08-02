@@ -10,8 +10,9 @@ class database {
 	public function __construct($dsn,$username,$passwd,$option=null){
 	    if($option) $option=array(PDO::ATTR_PERSISTENT=>true);
 	    $this->pdo = new PDO($dsn, $username, $passwd, $option);
-	    //$this->pdo->setAttribute(PDO::ATTR_CASE,PDO::CASE_NATURAL);
-        $this->query("SET NAMES UTF8;");
+	    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+	    $db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+            $this->query("SET NAMES UTF8;");
 	}
 
     /**
