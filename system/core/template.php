@@ -24,6 +24,7 @@ class template{
         $this->parse_template($content);
         $this->parse_vars($content);
         $this->parse_function($content);
+        $this->parse_special($content);
         $this->parse_if($content);
         $this->parse_foreach($content);
         $this->parse_for($content);
@@ -65,7 +66,7 @@ class template{
      */
     private function parse_template(&$content)
     {
-        $content = preg_replace('/\{\@([^\}]+)\}/', '{php} include bootstrap::renderer(\'$1\',null,1); {/php}', $content);
+        $content = preg_replace('/\{include\([\"\'](.*?)[\"\']\)\}/', '{php} include bootstrap::renderer(\'$1\',null,1); {/php}', $content);
     }
     /**
      * 处理变量
@@ -83,6 +84,18 @@ class template{
     {
         $content = preg_replace_callback('/\{([a-zA-Z0-9_]+?)\((.+?)\)\}/',array($this,'parse_funtion_replace_dot'), $content);
     }
+
+    /**
+     * 处理特殊头部
+     */
+    private function parse_special(&$content){
+        $content=preg_replace_callback('/\{var:\s{0,}([a-zA-Z0-9_]+)(.*?)(;?)\s{0,}\}/',function($a){
+            $par=$a[1];$arg=$a[2];$end=$a[3];
+            if(empty($end)) $end=';';
+            return '<?php echo bootstrap::getVar("'.$par.'"'.')'.$arg.$end.' ?>';
+        },$content);
+    }
+
     /**
      * 处理方法方法
      * @param string $content 编译内容
@@ -183,6 +196,20 @@ class template{
      * @return string
      */
     private function parse_vars_replace_dot($matches)
+    {
+        if(strpos($matches[1],'=')===false){
+            return '{php} echo $' . $this->replace_dot($matches[1]) . '; {/php}';
+        }else{
+            return '{php} $' . $this->replace_dot($matches[1]) . '; {/php}';
+        }
+    }
+
+    /**
+     * ECHO VARS
+     * @param array $matches
+     * @return string
+     */
+    private function parse_global_vars_replace_dot($matches)
     {
         if(strpos($matches[1],'=')===false){
             return '{php} echo $' . $this->replace_dot($matches[1]) . '; {/php}';
