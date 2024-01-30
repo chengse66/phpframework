@@ -1,8 +1,10 @@
 <?php
 class database {
 	private $pdo;
+    private $driver;
     /**
-     * @param string $dsn   mysql:host=localhost;dbname=test
+     * @param string $dsn   mysql:host=localhost;dbname=test<br>
+     *                      sqlsrv:Server=server_name;Database=database_name;Uid=username;PWD=password
      * @param string $username  用户名
      * @param string $passwd    密码
      * @param null $option  执行参数
@@ -10,10 +12,22 @@ class database {
 	public function __construct($dsn,$username,$passwd,$option=null){
 	    if($option) $option=array(PDO::ATTR_PERSISTENT=>true);
 	    $this->pdo = new PDO($dsn, $username, $passwd, $option);
-	    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-	    $db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+	    $this->pdo->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->driver=strtolower(substr($dsn,0,strpos($dsn,":")));
+        if($this->driver=='mysql'){
             $this->query("SET NAMES UTF8;");
+        }
 	}
+
+    /**
+     * 获取数据库类型
+     * @param string type
+     */
+    public function getType(){
+        return $this->driver;
+    }
 
     /**
      * 执行查询不返回结果
@@ -23,7 +37,7 @@ class database {
      */
 	function query($sql, $params = array()) {
 		if (empty ( $params )) {
-			$result = $this->pdo->exec ( $sql );
+			$result = $this->pdo->exec($sql);
 		}else {
             $statement = $this->pdo->prepare($sql);
             $result = $statement->execute($params);
@@ -122,7 +136,7 @@ class database {
 	function fetchAll($sql, $params = array()) {
 	    $result=false;
 		$statement = $this->pdo->prepare($sql );
-		if($statement->execute ( $params )){
+        if($statement->execute ( $params )){
             $result= $statement->fetchAll ( PDO::FETCH_ASSOC );
 		}
 		unset($statement);
@@ -248,4 +262,3 @@ class database {
         return $result;
     }
 }
-?>
