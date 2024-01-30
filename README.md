@@ -110,7 +110,12 @@ app/view/helloworld.html
 	ww_create 创建初始目录
 	
 	bootstrap::controller($classname,$method); 检测方法是否存在
-
+ 
+2024-01-30 新增了HTTP的用法(用于第三方请求)
+	http::post("https://127.0.0.1/test.php")->withForm(array('name'=>'value'))->onReady(function($ret){
+	    var_dump($ret);
+	})->submit();
+ 
 简单的模板语法：
 
 	{@/header}
