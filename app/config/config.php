@@ -1,6 +1,8 @@
 <?php
 return array(
-    "dsn"=>"mysql:host=127.0.0.1;dbname=test",
-    "user"=>"root",
-    "passwd"=>"root"
+    "default"=>array(
+        "dsn"=>"mysql:host=localhost;dbname=service",
+        "user"=>"root",
+        "passwd"=>"root"
+    )
 );
