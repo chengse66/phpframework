@@ -71,6 +71,7 @@ class httpRequest{
      * POST
      */
     function withForm($array){
+        $this->withHeader("Content-Type","application/x-www-form-urlencoded");
         $this->form=http_build_query($array);
         return $this;
     }
@@ -79,6 +80,7 @@ class httpRequest{
      * POST JSON
      */
     function withJson($array){
+        $this->withHeader("Content-Type","application/json");
         $this->form=json_encode($array);
         return $this;
     }
@@ -87,7 +89,17 @@ class httpRequest{
      * POST RAW DATA
      */
     function withData($rawData){
+        $this->withHeader("Content-Type","application/octet-stream");
         $this->form=$rawData;
+        return $this;
+    }
+
+    /**
+     * POST RAW DATA
+     */
+    function withTextData($text){
+        $this->withHeader("Content-Type","text/plain");
+        $this->form=$text;
         return $this;
     }
 
@@ -127,7 +139,7 @@ class httpRequest{
         }
         $ch=curl_init($url);
         if($method=="POST"){
-            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POST, true);
         }else{
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         }
@@ -147,7 +159,13 @@ class httpRequest{
                 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             }
         }
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $this->headers);
+
+        $headers=array();
+        foreach($this->headers as $k=>$v){
+            $headers[]=$k.": ".$v;
+        }
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_HEADER, true);
         $response = curl_exec($ch);
         $ret=array();
