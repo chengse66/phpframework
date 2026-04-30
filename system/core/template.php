@@ -1,255 +1,270 @@
 <?php
-class template{
-    private $tags = array();
-    private $parsephpcodes=array();
+/**
+ * Template 模板编译引擎 / Template Compilation Engine
+ *
+ * 将 HTML 模板编译为可执行的 PHP 文件 / Compiles HTML templates into executable PHP files
+ * 支持变量输出、条件判断、循环、模板引用和原生 PHP 块 / Supports variable output, conditionals, loops, template includes, and raw PHP blocks
+ */
+class template
+{
+    /** @var array 暂存的 PHP 代码块 / Buffered PHP code blocks */
+    private $phpBlocks = [];
+
+    /** @var array 模板中禁止调用的危险函数 / Dangerous functions blocked in templates */
+    private static $blockedFunctions = array(
+        'system', 'exec', 'passthru', 'shell_exec', 'popen', 'proc_open',
+        'eval', 'assert', 'create_function',
+        'file_put_contents', 'fwrite', 'fputs',
+        'unlink', 'rmdir',
+        'phpinfo',
+    );
 
     /**
-     * 移除BOM头
-     * @param $s 字符串
-     * @return string
-     */
-    private function RemoveBOM($s){
-        if (strlen($s)>=3 && ord($s[0]) == 239 && ord($s[1]) == 187 && ord($s[2]) == 191) return substr($s, 3);
-        return $s;
-    }
-
-    /**
-     * 内容编译
-     * @param string $content  编译的内容
-     * @return string
+     * 编译模板内容 / Compile template content
+     *
+     * 编译流程：提取 PHP 块 → 处理 include → 处理变量 → 处理函数 → 处理全局变量 → 处理 if → 处理 foreach → 处理 for → 还原 PHP 块
      */
     function Compiling($content)
     {
-        $this->parsePHP($content);
-        $this->parse_template($content);
-        $this->parse_vars($content);
-        $this->parse_function($content);
-        $this->parse_special($content);
-        $this->parse_if($content);
-        $this->parse_foreach($content);
-        $this->parse_for($content);
-        $this->parsePHP2($content);
+        $this->extractPhpBlocks($content);
+        $this->compileIncludes($content);
+        $this->compileVariables($content);
+        $this->compileFunctions($content);
+        $this->compileGlobalVars($content);
+        $this->compileIf($content);
+        $this->compileForeach($content);
+        $this->compileFor($content);
+        $this->restorePhpBlocks($content);
+        $this->removeBom($content);
         return $content;
     }
 
     /**
-     * 处理PHP标识
-     * @param string $content 编译内容
+     * 移除 BOM 头 / Remove UTF-8 BOM header
      */
-    private function parsePHP(&$content)
+    private function removeBom(&$content)
     {
-        $this->parsephpcodes=array();
-        if($i=preg_match_all ( "/\{php\}([\D\d]+?)\{\/php\}/si" ,  $content ,  $matches )>0){
-            if(isset($matches[1])) {
-                foreach ($matches[1] as $j => $p) {
-                    $content = str_replace($p, '<!--' . $j . '-->', $content);
-                    $this->parsephpcodes[$j] = $p;
+        if (strncmp($content, "\xEF\xBB\xBF", 3) === 0) {
+            $content = substr($content, 3);
+        }
+    }
+
+    /**
+     * 提取 {php}...{/php} 块为占位符，避免后续编译步骤修改 PHP 原生代码
+     */
+    private function extractPhpBlocks(&$content)
+    {
+        $this->phpBlocks = [];
+        $content = preg_replace_callback(
+            '/\{php\}([\s\S]+?)\{\/php\}/si',
+            function ($m) {
+                $id = count($this->phpBlocks);
+                $this->phpBlocks[$id] = $m[1];
+                return "<!--PHP_BLOCK_{$id}-->";
+            },
+            $content
+        );
+    }
+
+    /**
+     * 还原 PHP 占位符为 <?php ... ?> 标签
+     */
+    private function restorePhpBlocks(&$content)
+    {
+        foreach ($this->phpBlocks as $id => $code) {
+            $content = str_replace("<!--PHP_BLOCK_{$id}-->", "<?php {$code} ?>", $content);
+        }
+        // 兜底：处理未被提取到的 {php} 块
+        $content = preg_replace('/\{php\}([\s\S]+?)\{\/php\}/', '<?php $1 ?>', $content);
+        $this->phpBlocks = [];
+    }
+
+    /**
+     * 处理模板引用 {include('path')}
+     */
+    private function compileIncludes(&$content)
+    {
+        $content = preg_replace(
+            '/\{include\([\'"](.*?)[\'"]\)\}/',
+            '{php} include bootstrap::renderer(\'$1\',null,1); {/php}',
+            $content
+        );
+    }
+
+    /**
+     * 处理变量标签 {$var} / {!$var}
+     *
+     * {$var}  — 自动转义输出（防 XSS）/ Auto-escaped output (XSS protection)
+     * {!$var} — 原始输出（用于已知安全的 HTML）/ Raw output (for known-safe HTML)
+     * 含 = 为赋值 / With = for assignment
+     */
+    private function compileVariables(&$content)
+    {
+        // 先处理原始输出 {!$var}，避免被下面的规则匹配 / Handle raw output first
+        $content = preg_replace_callback(
+            '#\{!\$(?!\()([^\}]+)\}#',
+            function ($m) {
+                $expr = $this->dotToArrow($m[1]);
+                if (strpos($m[1], '=') === false) {
+                    return "{php} echo \${$expr}; {/php}";
                 }
-            }
-        }
-    }
-    /**
-     * 处理注释
-     * @param string $content 编译内容
-     */
-    private function parsePHP2(&$content)
-    {
-        foreach($this->parsephpcodes as $j=>$p) {
-            $content = str_replace('{php}<!--'.$j.'-->{/php}','<'.'?php '.$p.' ?'.'>',$content);
-        }
-        $content = preg_replace('/\{php\}([\D\d]+?)\{\/php\}/', '<'.'?php $1 ?'.'>', $content);
-        $this->parsephpcodes=array();
-    }
-    /**
-     * 处理模版引用
-     * @param string $content 编译内容
-     */
-    private function parse_template(&$content)
-    {
-        $content = preg_replace('/\{include\([\"\'](.*?)[\"\']\)\}/', '{php} include bootstrap::renderer(\'$1\',null,1); {/php}', $content);
-    }
-    /**
-     * 处理变量
-     * @param string $content 编译内容
-     */
-    private function parse_vars(&$content)
-    {
-        $content = preg_replace_callback('#\{\$(?!\()([^\}]+)\}#',array($this,'parse_vars_replace_dot'), $content);
-    }
-    /**
-     * 处理方法
-     * @param string $content 编译内容
-     */
-    private function parse_function(&$content)
-    {
-        $content = preg_replace_callback('/\{([a-zA-Z0-9_]+?)\((.+?)\)\}/',array($this,'parse_funtion_replace_dot'), $content);
+                return "{php} \${$expr}; {/php}";
+            },
+            $content
+        );
+        // 转义输出 {$var} / Escaped output
+        $content = preg_replace_callback(
+            '#\{\$(?!\()([^\}]+)\}#',
+            function ($m) {
+                $expr = $this->dotToArrow($m[1]);
+                if (strpos($m[1], '=') === false) {
+                    return "{php} echo htmlspecialchars(\${$expr}, ENT_QUOTES, 'UTF-8'); {/php}";
+                }
+                return "{php} \${$expr}; {/php}";
+            },
+            $content
+        );
     }
 
     /**
-     * 处理特殊头部
+     * 处理函数调用标签 {func(args)}
+     *
+     * 禁止调用危险函数（命令执行、文件写入等）/ Blocks dangerous functions (command execution, file write, etc.)
      */
-    private function parse_special(&$content){
-        $content=preg_replace_callback('/\{var:\s{0,}([a-zA-Z0-9_]+)(.*?)(;?)\s{0,}\}/',function($a){
-            $par=$a[1];$arg=$a[2];$end=$a[3];
-            if(empty($end)) $end=';';
-            return '<?php echo bootstrap::getVar("'.$par.'"'.')'.$arg.$end.' ?>';
-        },$content);
-    }
-
-    /**
-     * 处理方法方法
-     * @param string $content 编译内容
-     */
-    private function parse_if(&$content)
-    {
-        while(preg_match('/\{if [^\n\}]+\}.*?\{\/if\}/s', $content))
-            $content = preg_replace_callback(
-                '/\{if ([^\n\}]+)\}(.*?)\{\/if\}/s',
-                array($this,'parse_if_sub'),
-                $content
-            );
-    }
-
-    /**
-     * ELSE IF
-     * @param $matches
-     * @return string
-     */
-    private function parse_if_sub($matches)
+    private function compileFunctions(&$content)
     {
         $content = preg_replace_callback(
-            '/\{elseif ([^\n\}]+)\}/',
-            array($this, 'parse_elseif'),
-            $matches[2]
-        );
-        $ifexp = str_replace($matches[1],$this->replace_dot($matches[1]),$matches[1]);
-        $content = str_replace('{else}', '{php}}else{ {/php}', $content);
-        return "<?php if ($ifexp) { ?>$content<?php } ?>";
-    }
-
-    /**
-     * ELSEIF
-     * @param array $matches
-     * @return string
-     */
-    private function parse_elseif($matches)
-    {
-        $ifexp = str_replace($matches[1],$this->replace_dot($matches[1]),$matches[1]);
-        return "{php}}elseif($ifexp) { {/php}";
-    }
-
-    /**
-     * FOREACH
-     * @param $content 编译内容
-     */
-    private function parse_foreach(&$content)
-    {
-        while(preg_match('/\{foreach(.+?)\}(.+?){\/foreach}/s', $content))
-            $content = preg_replace_callback(
-                '/\{foreach(.+?)\}(.+?){\/foreach}/s',
-                array($this,'parse_foreach_sub'),
-                $content
-            );
-    }
-
-    /**
-     * FOREACH
-     * @param array $matches
-     * @return string
-     */
-    private function parse_foreach_sub($matches)
-    {
-        $exp = $this->replace_dot($matches[1]);
-        $code = $matches[2];
-        return "{php} foreach ($exp) {{/php} $code{php} }  {/php}";
-    }
-
-    /**
-     * FOR
-     * @param $content 编译内容
-     */
-    private function parse_for(&$content)
-    {
-        while(preg_match('/\{for(.+?)\}(.+?){\/for}/s', $content))
-            $content = preg_replace_callback(
-                '/\{for(.+?)\}(.+?){\/for}/s',
-                array($this,'parse_for_sub'),
-                $content
-            );
-    }
-
-    /**
-     * FOR SUB
-     * @param $matches
-     * @return string
-     */
-    private function parse_for_sub($matches)
-    {
-        $exp = $this->replace_dot($matches[1]);
-        $code = $matches[2];
-        return "{php} for($exp) {{/php} $code{php} }  {/php}";
-    }
-
-    /**
-     * ECHO VARS
-     * @param array $matches
-     * @return string
-     */
-    private function parse_vars_replace_dot($matches)
-    {
-        if(strpos($matches[1],'=')===false){
-            return '{php} echo $' . $this->replace_dot($matches[1]) . '; {/php}';
-        }else{
-            return '{php} $' . $this->replace_dot($matches[1]) . '; {/php}';
-        }
-    }
-
-    /**
-     * ECHO VARS
-     * @param array $matches
-     * @return string
-     */
-    private function parse_global_vars_replace_dot($matches)
-    {
-        if(strpos($matches[1],'=')===false){
-            return '{php} echo $' . $this->replace_dot($matches[1]) . '; {/php}';
-        }else{
-            return '{php} $' . $this->replace_dot($matches[1]) . '; {/php}';
-        }
-    }
-
-    /**
-     * ECHO FUNCTION NAME
-     * @param $matches
-     * @return string
-     */
-    private function parse_funtion_replace_dot($matches)
-    {
-        return '{php} echo ' . $matches[1] . '(' . $this->replace_dot($matches[2]) . '); {/php}';
-    }
-    /**
-     * REPLACE CONTENT
-     * @param $content
-     * @return mixed
-     */
-    private function replace_dot($content)
-    {
-        $array=array();
-        preg_match_all('/".+?"|\'.+?\'/', $content,$array,PREG_SET_ORDER);
-        if(count($array)>0){
-            foreach($array as $a){
-                $a=$a[0];
-                if(strstr($a,'.')!=false){
-                    $b=str_replace('.','{%_dot_%}',$a);
-                    $content=str_replace($a,$b,$content);
+            '/\{([a-zA-Z_]\w*)\((.*)\)\}/',
+            function ($m) {
+                $fn = strtolower($m[1]);
+                if (in_array($fn, self::$blockedFunctions)) {
+                    return '{php} echo "[blocked: ' . $m[1] . ']"; {/php}';
                 }
-            }
+                return '{php} echo ' . $m[1] . '(' . $this->dotToArrow($m[2]) . '); {/php}';
+            },
+            $content
+        );
+    }
+
+    /**
+     * 处理全局变量标签 {var:name} — 输出通过 bootstrap::setVar() 设置的变量
+     */
+    private function compileGlobalVars(&$content)
+    {
+        $content = preg_replace_callback(
+            '/\{var:\s*([a-zA-Z_]\w*)(.*?)(;?)\s*\}/',
+            function ($m) {
+                $name = $m[1];
+                $args = $m[2];
+                // 只允许安全的属性/方法链，阻止代码注入 / Only allow safe property/method chains, block code injection
+                if ($args !== '' && !preg_match('/^(?:->[\w]+(?:\([^)]*\))?|\[[^\]]*\])*$/', $args)) {
+                    $args = '';
+                }
+                return "<?php echo htmlspecialchars(bootstrap::getVar(\"{$name}\"){$args}, ENT_QUOTES, 'UTF-8'); ?>";
+            },
+            $content
+        );
+    }
+
+    /**
+     * 处理 {if}...{elseif}...{else}...{/if} 条件块，支持嵌套
+     */
+    private function compileIf(&$content)
+    {
+        while (preg_match('/\{if\s+[^\n\}]+\}.*?\{\/if\}/s', $content)) {
+            $content = preg_replace_callback(
+                '/\{if\s+([^\n\}]+)\}(.*?)\{\/if\}/s',
+                function ($m) {
+                    $condition = $this->dotToArrow($m[1]);
+                    $body = $m[2];
+
+                    // 处理 {elseif}
+                    $body = preg_replace_callback(
+                        '/\{elseif\s+([^\n\}]+)\}/',
+                        function ($em) {
+                            $cond = $this->dotToArrow($em[1]);
+                            return "{php}}elseif({$cond}){ {/php}";
+                        },
+                        $body
+                    );
+
+                    // 处理 {else}
+                    $body = str_replace('{else}', '{php}}else{ {/php}', $body);
+
+                    return "<?php if ({$condition}) { ?>{$body}<?php } ?>";
+                },
+                $content
+            );
         }
-        $content=str_replace(' . ',' {%_dot_%} ',$content);
-        $content=str_replace('. ','{%_dot_%} ',$content);
-        $content=str_replace(' .',' {%_dot_%}',$content);
-        $content=str_replace('.','->',$content);
-        $content=str_replace('{%_dot_%}','.',$content);
+    }
+
+    /**
+     * 处理 {foreach}...{/foreach} 循环块，支持嵌套
+     */
+    private function compileForeach(&$content)
+    {
+        while (preg_match('/\{foreach(.+?)\}(.+?)\{\/foreach\}/s', $content)) {
+            $content = preg_replace_callback(
+                '/\{foreach(.+?)\}(.+?)\{\/foreach\}/s',
+                function ($m) {
+                    $expr = $this->dotToArrow($m[1]);
+                    return "{php} foreach ({$expr}) {{/php} {$m[2]}{php} } {/php}";
+                },
+                $content
+            );
+        }
+    }
+
+    /**
+     * 处理 {for}...{/for} 循环块，支持嵌套
+     */
+    private function compileFor(&$content)
+    {
+        while (preg_match('/\{for(.+?)\}(.+?)\{\/for\}/s', $content)) {
+            $content = preg_replace_callback(
+                '/\{for(.+?)\}(.+?)\{\/for\}/s',
+                function ($m) {
+                    $expr = $this->dotToArrow($m[1]);
+                    return "{php} for({$expr}) {{/php} {$m[2]}{php} } {/php}";
+                },
+                $content
+            );
+        }
+    }
+
+    /**
+     * 将点号 (.) 转换为 PHP 对象访问符 (->)
+     *
+     * 保护引号内的点号和字符串连接符（空格包裹的点号）不被转换
+     */
+    private function dotToArrow($content)
+    {
+        // 保护引号内的内容
+        $placeholders = [];
+        $content = preg_replace_callback(
+            '/"[^"]*"|\'[^\']*\'/',
+            function ($m) use (&$placeholders) {
+                $key = '{%_PH_' . count($placeholders) . '_%}';
+                $placeholders[$key] = $m[0];
+                return $key;
+            },
+            $content
+        );
+
+        // 保护字符串连接符（空格包裹的点号）
+        $content = str_replace(' . ', ' {%_DOT_%} ', $content);
+        $content = str_replace('. ', '{%_DOT_%} ', $content);
+        $content = str_replace(' .', ' {%_DOT_%}', $content);
+
+        // 执行转换
+        $content = str_replace('.', '->', $content);
+
+        // 还原
+        $content = str_replace('{%_DOT_%}', '.', $content);
+        foreach ($placeholders as $key => $val) {
+            $content = str_replace($key, $val, $content);
+        }
+
         return $content;
     }
 }

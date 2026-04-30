@@ -1,0 +1,12 @@
+<div class="test-module">
+    <div class="module-header">{$module_name}</div>
+    {foreach $tests as $test}
+    <div class="test-row">
+        <span class="badge {$test.badge}"></span>
+        <span>{$test.name}</span>
+        {if $test.has_detail}
+        <span class="detail">{$test.detail}</span>
+        {/if}
+    </div>
+    {/foreach}
+</div>

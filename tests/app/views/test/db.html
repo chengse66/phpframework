@@ -1,0 +1,17 @@
+<div class="test-module">
+    <div class="module-header">Database - {$table_name}</div>
+    {foreach $operations as $op}
+    <div class="test-row">
+        <span class="badge {$op.badge}"></span>
+        <span>{$op.name}</span>
+        {if $op.detail}
+        <span class="detail">{$op.detail}</span>
+        {/if}
+    </div>
+    {/foreach}
+    {if $has_data}
+    <div style="padding: 12px 20px; background: #f8f9fa; font-size: 13px;">
+        <strong>Result:</strong> {foreach $rows as $row}{$row.name} (age: {$row.age}) {/foreach}
+    </div>
+    {/if}
+</div>

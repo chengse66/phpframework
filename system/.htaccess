@@ -1,0 +1,3 @@
+# 禁止直接通过浏览器访问系统文件 / Block direct HTTP access to system files
+# PHP 的 require/include 不受影响 / PHP require/include is not affected
+Deny from all

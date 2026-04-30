@@ -1,0 +1,10 @@
+<div class="test-module">
+    <div class="module-header">Template Engine</div>
+    {foreach $tests as $test}
+    <div class="test-row">
+        <span class="badge {$test.badge}"></span>
+        <span>{$test.name}</span>
+        <span class="detail">{$test.detail}</span>
+    </div>
+    {/foreach}
+</div>
